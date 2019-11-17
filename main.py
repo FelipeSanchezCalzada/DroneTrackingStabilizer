@@ -55,14 +55,14 @@ frames_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
 
 # PID Controller for roll
-pid_roll = PID(0.6, 0.01, 1.5)
+pid_roll = PID(0.6, 0.06, 1.5)
 pid_roll.setpoint = frames_width/2
 pid_roll.output_limits = (-500, 500)
 
 
 # PID Controller for pitch
-pid_pitch = PID(0.6, 0.01, 1.5)
-pid_pitch.setpoint = frames_width/2
+pid_pitch = PID(0.6, 0.06, 1.5)
+pid_pitch.setpoint = frames_height/2
 pid_pitch.output_limits = (-500, 500)
 
 
@@ -125,6 +125,8 @@ while cap.isOpened():
 
         x, y = calculateCenter(newbox)
         cv2.circle(frame, (x, y), 4,(255, 255, 0), -1)
+        # Print target position
+        cv2.circle(frame, (int(pid_roll.setpoint), int(pid_pitch.setpoint)), 4, (255, 255, 0), -1)
 
         # Update pitch and roll with drone position and PID Controllers
         roll = 1500 + pid_roll(x)
@@ -132,14 +134,28 @@ while cap.isOpened():
 
         arduino.write(f"{int(roll)} {int(pitch)}".encode('ascii'))
 
-        print(f"Post PID => Roll: {int(roll)}\nPitch: {int(pitch)}\n\n")
+        # print(f"Post PID => Roll: {int(roll)}, Pitch: {int(pitch)}\n\n")
 
 
     # show frame
     cv2.imshow('MultiTracker', frame)
 
     # quit on ESC button
-    if cv2.waitKey(1) & 0xFF == 27:  # Esc pressed
+    key = cv2.waitKey(1)
+    if key == 27:  # Esc pressed
         break
+    elif key == 97:
+        pid_roll.setpoint = pid_roll.setpoint - 10
+        print(f"New SetPoint => X: {pid_roll.setpoint}  X: {pid_pitch.setpoint}\n")
+    elif key == 100:
+        pid_roll.setpoint = pid_roll.setpoint + 10
+        print(f"New SetPoint => X: {pid_roll.setpoint}  X: {pid_pitch.setpoint}\n")
+    elif key == 119:
+        pid_pitch.setpoint = pid_pitch.setpoint + 10
+        print(f"New SetPoint => X: {pid_roll.setpoint}  X: {pid_pitch.setpoint}\n")
+    elif key == 115:
+        pid_pitch.setpoint = pid_pitch.setpoint - 10
+        print(f"New SetPoint => X: {pid_roll.setpoint}  X: {pid_pitch.setpoint}\n")
+
 
 
